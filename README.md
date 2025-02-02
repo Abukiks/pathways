@@ -6,6 +6,8 @@ Welcome to the Tech Career Pathways Guide! This guide is designed to help you be
 
 Each tech career path outlined in this guide focuses on mastering essential skills to thrive in the industry. Whether you're starting fresh or aiming to enhance your expertise, these pathways cover fundamental concepts and advanced techniques relevant to today's tech landscape.
 
+[DevOps Engineer Learning Path](https://github.com/Abukiks/pathways/tree/master/devops-engineer): Master the skills to streamline software development and operations as a DevOps Engineer.
+
 [Site Reliability Engineer Learning Path](https://github.com/Abukiks/pathways/tree/master/site-reliability-engineer): Master the skills to ensure reliable and scalable software systems as a Site Reliability Engineer.
 
 ### Getting Started

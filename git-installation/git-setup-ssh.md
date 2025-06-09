@@ -1,99 +1,146 @@
-## Check SSH Key Configuration
+## SSH Key Setup & Troubleshooting Guide
 
-1. **Verify SSH Key Exists**:
-   Check if you have an SSH key generated on your machine. Open a terminal and run:
-   ```bash
-   ls -al ~/.ssh
-   ```
-   Look for files named `id_rsa` and `id_rsa.pub` (or similar).
+### 1. Verify SSH Key Exists
 
-2. **Generate a New SSH Key (if needed)**:
-   If no keys are present, generate a new SSH key pair:
-   ```bash
-   ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
-   ```
-   Press Enter to accept the default file location and enter a passphrase if desired.
+Check if you already have SSH keys on your machine:
 
-3. **Add SSH Key to SSH Agent**:
-   Start the SSH agent in the background:
-   ```bash
-   eval "$(ssh-agent -s)"
-   ```
-   Then add your SSH key:
-   ```bash
-   ssh-add ~/.ssh/id_rsa
-   ```
+```bash
+ls -al ~/.ssh
+```
 
-4. **Add Public Key to GitHub/GitLab**:
-   Copy your public key to the clipboard:
-   ```bash
-   cat ~/.ssh/id_rsa.pub
-   ```
-   Go to your GitHub or GitLab account settings and add the public key under **SSH and GPG keys**.
-
-## Test Your Connection
-
-1. **Test SSH Connection**:
-   Run the following command to test if your SSH key is correctly set up:
-   ```bash
-   ssh -T git@github.com
-   ```
-   or for GitLab:
-   ```bash
-   ssh -T git@gitlab.com
-   ```
-   You should see a message confirming successful authentication.
-
-## Ensure Correct Repository URL
-
-1. **Check Remote URL**:
-   Verify that the remote URL of your repository is correct. You can check this with:
-   ```bash
-   git remote -v
-   ```
-   If it’s incorrect, update it using:
-   ```bash
-   git remote set-url origin git@github.com:username/repository.git
-   ```
-
-## Additional Troubleshooting
-
-- **Permissions Issue**: Ensure that your `.ssh` directory and files have the correct permissions. The directory should be `700` and files should be `600`:
-  ```bash
-  chmod 700 ~/.ssh
-  chmod 600 ~/.ssh/id_rsa
-  chmod 644 ~/.ssh/id_rsa.pub
-  ```
-
-- **Firewall or Network Issues**: Sometimes, network settings or firewalls can block SSH connections. Ensure that your network allows outbound connections on port 22.
-
-By following these steps, you should be able to resolve the "Permission denied (publickey)" error and successfully connect to your Git repository.
+Look for files like `id_rsa` and `id_rsa.pub` (or `id_ed25519` and `.pub`).
 
 ---
-To copy your SSH public key to the clipboard so you can easily paste it elsewhere, you can use the following command depending on your operating system:
-For macOS
 
-bash
-cat ~/.ssh/id_rsa.pub | pbcopy
+### 2. Generate a New SSH Key (if none found)
 
-For Linux
-You might need to install xclip or xsel first. Here’s how to do it with xclip:
+If no key exists, generate one:
 
-    Install xclip if it's not already installed:
+```bash
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
 
-bash
-sudo apt install xclip  # For Debian/Ubuntu
-sudo yum install xclip  # For CentOS/RHEL
+* Press Enter to accept the default file location.
+* Optionally enter a passphrase for added security.
 
-Then run:
+---
 
-    bash
-    cat ~/.ssh/id_rsa.pub | xclip -selection clipboard
+### 3. Add SSH Key to SSH Agent
 
-For Windows (using Git Bash)
-In Git Bash, you can use:
+Start the SSH agent:
 
-bash
-cat ~/.ssh/id_rsa.pub | clip
+```bash
+eval "$(ssh-agent -s)"
+```
 
-After running the appropriate command for your OS, your public key will be copied to the clipboard, and you can paste it wherever needed using Ctrl + V or right-clicking and selecting paste.
+Add your private key to the agent:
+
+```bash
+ssh-add ~/.ssh/id_rsa
+```
+
+---
+
+### 4. Add Your Public Key to GitHub or GitLab
+
+Copy the public key to your clipboard:
+
+* **macOS:**
+
+  ```bash
+  cat ~/.ssh/id_rsa.pub | pbcopy
+  ```
+
+* **Linux (with `xclip`):**
+
+  ```bash
+  sudo apt install xclip        # Debian/Ubuntu
+  sudo yum install xclip        # CentOS/RHEL
+  cat ~/.ssh/id_rsa.pub | xclip -selection clipboard
+  ```
+
+* **Windows (Git Bash):**
+
+  ```bash
+  cat ~/.ssh/id_rsa.pub | clip
+  ```
+
+Then go to your **GitHub** or **GitLab** account settings → **SSH and GPG keys**, and paste your key there.
+
+---
+
+### 5. Test SSH Connection
+
+Test if the SSH setup works:
+
+* For GitHub:
+
+  ```bash
+  ssh -T git@github.com
+  ```
+
+* For GitLab:
+
+  ```bash
+  ssh -T git@gitlab.com
+  ```
+
+You should see a success message confirming authentication.
+
+---
+
+### 6. Verify Repository Remote URL
+
+Check your remote URL:
+
+```bash
+git remote -v
+```
+
+If the URL is incorrect or uses HTTPS instead of SSH, update it:
+
+```bash
+git remote set-url origin git@github.com:username/repository.git
+```
+
+---
+
+### 7. Fix Common Permission Issues
+
+Ensure your `.ssh` directory and files have proper permissions:
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/id_rsa
+chmod 644 ~/.ssh/id_rsa.pub
+```
+
+---
+
+### 8. Check Network/Firewall Settings
+
+Make sure outbound SSH connections on port 22 are allowed by your firewall or network.
+
+---
+
+## FAQ: Permission Denied Error
+
+**Error:**
+
+```
+ERROR: Permission to xJohnlrac/pathways.git denied to jabucay32.
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+```
+
+**Solution:**
+
+This often happens when your Git remote URL points to the wrong SSH host or account. Fix it by updating your remote URL:
+
+```bash
+git remote set-url origin git@github-personal:xJohnlrac/pathways.git
+```
+
+(Replace `git@github-personal` with the correct SSH host alias configured in your `~/.ssh/config` if applicable.)

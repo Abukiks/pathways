@@ -6,13 +6,13 @@ Welcome to **Abukiks' Handbook**—a structured and practical guide designed to 
 
 Each learning path focuses on essential concepts, tools, and practices required to succeed in today's most sought-after tech roles. Choose the path that best aligns with your interests and goals:
 
-* [**DevOps Engineer**](https://github.com/abukiks/pathways/tree/master/devops-engineer): Automate, integrate, and optimize software development and IT operations using modern DevOps principles and tooling.
+* [**DevOps Engineer**](https://github.com/abukiks/pathways/tree/master/devops-eng): Automate, integrate, and optimize software development and IT operations using modern DevOps principles and tooling.
 
-* [**Site Reliability Engineer (SRE)**](https://github.com/abukiks/pathways/tree/master/site-reliability-engineer): Combine software engineering and systems administration to ensure scalable and reliable infrastructure.
+* [**Site Reliability Engineer (SRE)**](https://github.com/abukiks/pathways/tree/master/site-reliability-eng): Combine software engineering and systems administration to ensure scalable and reliable infrastructure.
 
-* [**Cloud Engineer**](https://github.com/abukiks/pathways/tree/master/cloud-engineer): Learn to architect, deploy, and manage scalable cloud environments across platforms such as AWS, Azure, and Google Cloud.
+* [**Cloud Engineer**](https://github.com/abukiks/pathways/tree/master/cloud-eng): Learn to architect, deploy, and manage scalable cloud environments across platforms such as AWS, Azure, and Google Cloud.
 
-* [**Data Engineer**](https://github.com/abukiks/pathways/tree/master/data-engineer): Design and build robust data pipelines and infrastructure to support analytics, reporting, and machine learning.
+* [**Data Engineer**](https://github.com/abukiks/pathways/tree/master/data-eng): Design and build robust data pipelines and infrastructure to support analytics, reporting, and machine learning.
 
 ## Getting Started
 

@@ -259,3 +259,297 @@ if __name__ == "__main__":
 ```
 
 This change now allows us to run as many instances of our application as required while ensuring we store nothing locally and enabling all instances to point to the same count.
+
+---
+
+## The 12-Factor App: Treat Backing Services as Attached Resources
+
+### IV. Backing Services
+
+So let's look at number four, backing services. So we integrated Redis as a caching service to our app to store the visitor count. There may be other similar services such as an SMTP service to send emails and S3 integration to store images. And all of these are backing services and must be treated as attached resources.
+
+What does that mean? Let's take the example of integration with Redis. Redis is an attached resource for our app and irrespective of where it is hosted, maybe locally or in a cloud environment, or maybe a Redis managed service, wherever it may be, it should work without having to change our application code. You shouldn't have anything in the code that is specific to a locally hosted Redis service, or a remotely hosted Redis service for that matter. We should be able to point our app to another instance, and it should just work.
+
+---
+
+## The 12-Factor App: Store Config in the Environment
+
+### III. Config
+
+So the next factor is **Config**. As you may have noticed, our Python code includes hard-coded Redis host and port values. This presents a problem when deploying the application to different environments such as production, staging, and development, as each environment may use a different Redis instance, requiring changes to the host and port values. This is not considered a best practice, as it can lead to inconsistencies and errors when deploying to different environments.
+
+#### Original App.py
+
+```python
+from flask import Flask
+from redis import Redis
+
+app = Flask(__name__)
+redisDb = Redis(host='redis-db-', port=6380)  # hardcoded Redis host and port values
+
+@app.route('/')  
+def welcomeToAbukiks():
+    redisDb.incr('visitorCount')
+    visitorCount = str(redisDb.get('visitorCount'), 'utf-8')
+    return "Welcome to Abukiks! Visitor count: " + visitorCount
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
+```
+
+#### .env
+
+```
+HOST="redis_db"
+PORT="6379"
+```
+
+#### Updated App.py with Environment Variables
+
+```App.py
+from flask import Flask
+from redis import Redis
+import os
+
+app = Flask(__name__)
+redisDb = Redis(host=os.getenv('HOST'), port=os.getenv('PORT'))
+
+@app.route('/')  
+def welcomeToAbukiks():
+    redisDb.incr('visitorCount')
+    visitorCount = str(redisDb.get('visitorCount'), 'utf-8')
+    return "Welcome to Abukiks! Visitor count: " + visitorCount
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
+```
+
+To ensure that our environment configurations are separate from our main application code and not under version control, we keep them in a separate file named `.env` and load them as environment variables in the app.
+
+> The 12-Factor App stores config in environment variables.
+
+This approach allows us to:
+
+* Use different configurations for different environments such as testing, staging, or production.
+* Avoid hard-coding sensitive or environment-specific values.
+* Open source the project at any time without exposing sensitive configuration information.
+* Eliminate the need for code-level changes between environments.
+
+Keeping configuration in the environment promotes flexibility, security, and cleaner deployment workflows.
+
+---
+
+# The 12-Factor App: Strictly Separate Build and Run Stages
+
+## Release and Run
+
+One of the recent changes pushed resulted in a typo in the message shown in the browser. This needs to be fixed ASAP. How do we roll back the recent change without really having to push another commit?
+
+Now in this case, since the code base is small and the issue is only a typo, it might look easier to just push another commit to the code fixing the typo. And we need to do that, of course, at some point.
+
+```python
+# App.py
+from flask import Flask
+from redis import Redis
+import os
+
+app = Flask(__name__)
+redisDb = Redis(host=os.getenv('HOST'), port=os.getenv('PORT'))
+
+@app.route('/')  
+def welcomeToAbukiks():
+    redisDb.incr('visitorCount')
+    visitorCount = str(redisDb.get('visitorCount'), 'utf-8')
+    return "Welcome to Abukisk! Visitor count: " + visitorCount
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", debug=True)
+```
+
+## V. Build, Release, Run
+
+However, in larger and complex environments, you may not have enough time to push such changes and wait for it to get rebuilt and tested and deployed. This is possible if we have a clear separation of build and run phases.
+
+So let's first walk you through the different stages of a release cycle. The 12 Factor App uses **strict separation** between the **build**, **release**, and **run** stages. Let's see what these stages are first.
+
+### Build Phase
+
+The current workflow involves the development phase where you write your code on your laptop. This could be on your favorite text editor like VS Code or PyCharm.
+
+And now the code in the text format is not good enough to be run. To run it as an application by the end user, it needs to be in an executable format — like an `.exe` file in Windows or a binary file in Linux. This could also be a Docker image as it is in our case.
+
+Converting the code from a text format to a binary or executable format is known as **building the code**. Tools for this include:
+
+* Python: `setuptools`
+* Java: `Maven`, `Gradle`
+* Docker: `docker build`
+
+We use `docker build` to build a Docker image for the application using our Dockerfile.
+
+### Release Phase
+
+Once built, the executable **along with the config file for its environment** becomes the **release object**.
+
+> A combination of the executable + environment configuration = Release Object
+
+Each release should have a **unique release ID** — this could be a version (`v1`, `v2`) or a timestamp. Any minor code change (like a typo) should create a **new release**.
+
+### Run Phase
+
+This is where the release object is **run in its respective environment**. The exact same build is used across environments to ensure consistency.
+
+> Minor code change → New build → New release → New deployment
+
+![alt text](image.png)
+
+By clearly separating our **build** and **run** phases:
+
+* We can effectively manage build artifacts and deployments
+* We can store artifacts in designated locations
+* We can **roll back** to previous releases easily
+* We can redeploy a specific release if needed
+
+---
+
+✅ **The strict separation of build and run stages is a key principle within the 12 Factor App methodology.**
+
+---
+
+# The 12-Factor App: Export Services via Port Binding
+
+In previous steps, you have noticed that accessing our Flask web application was as simple as typing the URL and port number in a web browser on your local machine. In this case, it's `5000`. This is because the Python Flask framework listens on port `5000` by default.
+
+Now, if we were running multiple instances of our application on the same server, we should be able to bind the app to other ports on the server, such as `5001`, `5002`, etc. Other services may have similar port bindings configured. For example, Redis listens on port `6379`.
+
+## VII. Port Binding
+
+Our app exports HTTP as a service by binding to a specific port and listening for incoming requests on that port.
+
+Unlike traditional web applications, **the 12-Factor App is completely self-contained and does not rely on a specific web server to function**.
+---
+
+# The 12-Factor App: Maximize Robustness with Fast Startup and Graceful Shutdown
+
+The next one is **disposability**. The 12-Factor App's processes are disposable, meaning they can be started or stopped at a moment's notice.
+
+Earlier we talked about scaling. A 12-Factor App should be able to scale up to provision additional instances when requirements increase, ideally in a matter of seconds. For this to happen, processes should strive to **minimize startup time**, meaning you shouldn't rely on complex startup scripts to provision your app.
+
+## IX. Disposability
+
+The same is true for reducing instances when load decreases.
+
+> Processes should be disposable when no longer required. The 12-Factor App's processes should shut down gracefully when they receive a SIGTERM signal from the process manager.
+
+So let's see what that means.
+
+When the `docker stop` command is initiated, Docker first sends the `SIGTERM` signal and after a grace period, if the container is not stopped, Docker sends the `SIGKILL` signal to forcefully terminate the process running inside the container.
+
+So why the two signals? We want to allow the application enough time to shut down gracefully. Our application may be processing requests from hundreds of users at a time.
+
+A graceful shutdown allows the application enough time to stop accepting new requests, while also completing processing of all existing requests. This way, users who are waiting for a response from the app are not impacted.
+
+For this, the app should be able to handle the `SIGTERM` signal to avoid any unexpected data loss or resource leaks that can occur if the process is terminated forcefully with a `SIGKILL` signal.
+
+Here is an example of a Flask application accepting the `SIGTERM` signal and then terminating the process:
+
+![alt text](image-1.png)
+
+
+---
+
+# The 12-Factor App: Keep Development, Staging, and Production as Similar as Possible
+
+The next one is **dev-prod parity**. Earlier, we talked about three different environments where the application will be deployed.
+
+* The **dev environment** is where the application is developed by developers to test changes during the development phase.
+* The **staging environment** is where it is deployed to be tested against a production-like setup.
+* The **prod environment**, of course, is where the application is hosted to be accessed by users.
+
+Traditionally, it would take changes built by developers in the development environment **weeks or even months** to go into production. You had:
+
+* One set of people write code.
+* Another set of people deploy it in a production environment.
+* One DB used in dev, such as a lightweight database like **SQLite**, and another one in prod, such as **PostgreSQL**.
+
+So there is a **time gap** for the time it takes code to go from dev to prod environment.
+And the problem with that is there may be **other things changing in the app** from the time that it was developed to the time it goes into production that might affect the functionality of the change.
+
+There is a:
+
+* **Personnel gap**, when the ops people deploying the change have little to no knowledge of the new changes, making it hard to identify issues caused by the new changes.
+* **Tools gap**, where different tools used in different environments may lead to unexpected consequences when deployed in production.
+
+---
+
+## X. Dev/prod parity
+
+This is where the 10th principle of the 12-Factor App comes in. It is about the **parity between different environments**.
+
+> The 12-Factor App is designed for Continuous Deployment by keeping the gap between development and production small.
+> The 12-Factor App developer resists the urge to use different backing services between different environments.
+
+With **continuous integration**, **continuous delivery**, and **deployment tools**, today we are able to reduce the time it takes for changes to go from dev to production environments in a matter of **hours**, or even **minutes** in some cases.
+
+* The developer who writes code should also be involved in deploying and watching it in production environments.
+* With tools, we must aim to keep the same tool as much as possible.
+* With modern tools being lightweight and **containerization tools like Docker**, making it easy to set up development environments, this shouldn't be hard to achieve.
+
+---
+
+# The 12-Factor App: Treat Logs as Event Streams
+
+Let's now talk about logs. Our application outputs certain logs about the processes — starting the port it's listening on, and every request that comes in and is served by the server is logged as a separate line. The logs also capture any errors in code, which helps troubleshoot issues if there are any failures.
+
+Traditionally, applications followed different approaches to storing logs.
+
+![alt text](image-2.png)
+
+One approach was to write the logs to a local file, named something like `log file`. The problem with this approach is that in the world of containers, the container may be killed at any time and the logs would be lost. Moreover, the application is coded to write to specific log files on the file system, which is another problem.
+
+In other cases, applications try to push logs to certain centralized logging systems like **Fluentd**, and while centralized management of logs is encouraged, tightly coupling a specific logging solution to the app itself is discouraged. We do not want our app to be stuck to a single solution.
+
+For example, having code that sends logs directly to a specific logging provider is **discouraged**.
+
+## XI. Logs
+
+The **11th principle** in the 12-Factor App methodology is about **logs management**.
+
+> A 12-Factor App never concerns itself with routing or storage of its output stream.
+
+Logs should be:
+
+- Stored in a centralized location in a **structured format**.
+- Not written to specific files or tied to a specific logging solution.
+- Emitted to `stdout` or written locally in **structured JSON format**.
+
+This makes it easier for agents to pick up the logs and send them to a centralized location for **consolidation and analysis**.
+
+Some good examples of centralized logging solutions include:
+
+- **ELK Stack**
+- **Splunk**
+
+All logs must follow a **structured format** to make them easy to query and analyze.
+---
+
+# The 12-Factor App: Run admin/management tasks as one-off processes
+
+The last and final principle in the 12 Factor App is about **admin processes**. So this is how our setup looks like right now: the Redis database stores the count of total visitors.
+
+Say, for some reason, we realize that this number is inaccurate or that we want to reset it. We need a way to get into the app and reset the count as a one-time operation.
+
+Now this is a one-time admin or management task that we will have to perform using a script like this. And we may have similar tasks, such as migrating databases or fixing specific user records, etc.
+
+The **admin processes** principle of the 12 Factor App methodology suggests that administrative tasks should be kept **separate from the application processes**. Specifically, it recommends that any one-off or periodic administrative tasks—such as database migration or server restarts—should be run as a separate process or application.
+
+However, it should be run on **identical systems** as the app running in the production environment. In our example, we could spin up another Docker container to connect to the same Redis database and run the reset script to reset the numbers.
+
+---
+
+## XII. Admin Processes
+
+The **admin processes** principle of the 12 Factor App methodology recommends that administrative tasks should be:
+
+* **Kept separate** from the application processes
+* Run in an **identical setup** as the main app
+* Be **automated**, **scalable**, and **reproducible**
